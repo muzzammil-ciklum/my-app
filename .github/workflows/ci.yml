@@ -1,0 +1,46 @@
+name: SonarQube Analysis
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  sonarQube:
+    name: Run SonarQube Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1
+          tools: composer
+
+      - name: Install dependencies
+        run: |
+          composer install --no-progress --no-suggest --prefer-dist
+          npm install
+
+      - name: Run Tests (Optional)
+        run: php artisan test
+
+      - name: Set up SonarScanner
+        run: |
+          npm install -g sonar-scanner
+          sonar-scanner \
+            -Dsonar.projectKey=muzzammil-ciklum_my-app \
+            -Dsonar.organization=muzzammil-ciklum \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      - name: Run SonarQube analysis
+        run: sonar-scanner
