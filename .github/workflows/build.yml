@@ -5,16 +5,34 @@ on:
       - main
   pull_request:
     types: [opened, synchronize, reopened]
+
 jobs:
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis relevancy
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Wait for SonarCloud Quality Gate
+        run: |
+          echo "Waiting for SonarCloud Quality Gate..."
+          status=$(curl -s -u ${{ secrets.SONAR_TOKEN }}: \
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=muzzammil-ciklum_my-app" \
+            | jq -r .projectStatus.status)
+
+          echo "Quality Gate Status: $status"
+          if [ "$status" != "OK" ]; then
+            echo "Quality Gate failed: $status"
+            exit 1
+          fi
+        env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
